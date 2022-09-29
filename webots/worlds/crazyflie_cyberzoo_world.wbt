@@ -6,7 +6,7 @@ Viewpoint {
   orientation -0.2215270339875365 0.46577324025280065 0.8567269470940505 0.9391121697713974
   position -2.5084981406899836 -1.1077653523339688 2.4922104332406385
   follow "Crazyflie"
-  followType "Mounted Shot"
+  followType "Tracking Shot"
   followSmoothness 0.1
 }
 TexturedBackground {
@@ -18,41 +18,19 @@ TexturedBackgroundLight {
 Robot {
   translation 0 0 0.015
   children [
-    DEF Multiranger Transform {
-      translation 0 0 0.02
-      children [
-        DistanceSensor {
-          rotation 0 0 1 -1.57
-          name "range_right"
-          lookupTable [
-            0 0 0
-            2 2000 0
-          ]
-        }
-        DistanceSensor {
-          rotation 0 0 1 3.14
-          name "range_back"
-          lookupTable [
-            0 0 0
-            2 2000 0
-          ]
-        }
-        DistanceSensor {
-          rotation 0 0 1 1.57
-          name "range_left"
-          lookupTable [
-            0 0 0
-            2 2000 0
-          ]
-        }
-        DistanceSensor {
-          name "range_front"
-          lookupTable [
-            0 0 0
-            2 2000 0
-          ]
-        }
-      ]
+    RangeFinder {
+      translation 0.03 0 -0.01
+      fieldOfView 0.82
+      width 8
+      height 8
+      spherical FALSE
+      near 0.01
+      minRange 0.1
+      maxRange 4.0
+      motionBlur 0.0
+      noise 0.05
+      resolution 0.1
+      lens NULL
     }
     Camera {
       translation 0.03 0 0.01

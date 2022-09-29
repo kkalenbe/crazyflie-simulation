@@ -62,14 +62,16 @@ gyro = robot.getDevice("gyro")
 gyro.enable(timestep)
 camera = robot.getDevice("camera")
 camera.enable(timestep)
-range_front = robot.getDevice("range_front")
-range_front.enable(timestep)
-range_left = robot.getDevice("range_left")
-range_left.enable(timestep)
-range_back = robot.getDevice("range_back")
-range_back.enable(timestep)
-range_right = robot.getDevice("range_right")
-range_right.enable(timestep)
+rangeFinder = robot.getDevice("range-finder")
+rangeFinder.enable(timestep)
+# range_front = robot.getDevice("range_front")
+# range_front.enable(timestep)
+# range_left = robot.getDevice("range_left")
+# range_left.enable(timestep)
+# range_back = robot.getDevice("range_back")
+# range_back.enable(timestep)
+# range_right = robot.getDevice("range_right")
+# range_right.enable(timestep)
     
 ## Initialize variables
 actualState = ActualState_t()
@@ -92,8 +94,8 @@ gainsPID.kd_z = 5
 init_pid_attitude_fixed_height_controller()
 
 ## Speeds
-forward_speed = 0.2
-yaw_rate = 0.5
+forward_speed = 0.8
+yaw_rate = 1.0
 
 ## Avoidance state
 avoid_yawDesired = 0
@@ -103,6 +105,8 @@ avoid_yawTime = 0
 motorPower = MotorPower_t()
 
 print('Take off!')
+
+heightDesired = 1.0
 
 # Main loop:
 while robot.step(timestep) != -1:
@@ -141,39 +145,39 @@ while robot.step(timestep) != -1:
     ## Get camera image
     w, h = camera.getWidth(), camera.getHeight()
     cameraData = camera.getImage()  # Note: uint8 string
-    image = np.fromstring(cameraData, np.uint8).reshape(h, w, 4)
+    image = np.frombuffer(cameraData, np.uint8).reshape(h, w, 4)
 
     # Show image
     # cv2.imshow('Drone camera', image)
     # cv2.waitKey(1)
 
-    ## Detect empty floor (green) in front of the drone
-    image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    xmin, xmax = int(0.20 * w), int(0.80 * w)
-    ymin, ymax = int(0.80 * h), int(1.00 * h)
-    max_pix = (xmax - xmin) * (ymax - ymin)
-    hmin, hmax = 30, 46
-    roi_hue = image[ymin:ymax, xmin:xmax, 0]
-    roi_sat = image[ymin:ymax, xmin:xmax, 1]
-    pix_count = np.count_nonzero((roi_hue >= hmin) & (roi_hue <= hmax) & (roi_sat > 64))
-    green_pct = pix_count / max_pix
-
-    ## Avoidance state machine
-    if avoid_yawTime > 0:
-        # Turning
-        avoid_yawTime -= dt
-        yawDesired += avoid_yawDesired
-    else:
-        # Not turning
-        if green_pct > 0.20:
-            # No obstacle: fly forwards
-            forwardDesired += forward_speed
-            turn_rate = 0
-        else:
-            # Obstacle in front: start turn
-            sign = 1 if random.random() > 0.5 else -1
-            avoid_yawDesired = sign * yaw_rate
-            avoid_yawTime = random.random() * 5.0
+    # ## Detect empty floor (green) in front of the drone
+    # image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # xmin, xmax = int(0.20 * w), int(0.80 * w)
+    # ymin, ymax = int(0.80 * h), int(1.00 * h)
+    # max_pix = (xmax - xmin) * (ymax - ymin)
+    # hmin, hmax = 30, 46
+    # roi_hue = image[ymin:ymax, xmin:xmax, 0]
+    # roi_sat = image[ymin:ymax, xmin:xmax, 1]
+    # pix_count = np.count_nonzero((roi_hue >= hmin) & (roi_hue <= hmax) & (roi_sat > 64))
+    # green_pct = pix_count / max_pix
+    #
+    # ## Avoidance state machine
+    # if avoid_yawTime > 0:
+    #     # Turning
+    #     avoid_yawTime -= dt
+    #     yawDesired += avoid_yawDesired
+    # else:
+    #     # Not turning
+    #     if green_pct > 0.20:
+    #         # No obstacle: fly forwards
+    #         forwardDesired += forward_speed
+    #         turn_rate = 0
+    #     else:
+    #         # Obstacle in front: start turn
+    #         sign = 1 if random.random() > 0.5 else -1
+    #         avoid_yawDesired = sign * yaw_rate
+    #         avoid_yawTime = random.random() * 5.0
 
     # Manual override
     key = Keyboard().getKey()
@@ -187,9 +191,13 @@ while robot.step(timestep) != -1:
         elif key == Keyboard.LEFT:
             sidewaysDesired = forward_speed
         elif key == ord('Q'):
-            yawDesired =  + yaw_rate
+            yawDesired = + yaw_rate
         elif key == ord('E'):
             yawDesired = - yaw_rate
+        elif key == ord('W'):
+            heightDesired += 0.01
+        elif key == ord('S'):
+            heightDesired -= 0.01
 
         key = Keyboard().getKey()
 
@@ -198,6 +206,7 @@ while robot.step(timestep) != -1:
     ## PID velocity controller with fixed height
     desiredState.vy = sidewaysDesired;
     desiredState.vx = forwardDesired;
+    desiredState.altitude = heightDesired;
     pid_velocity_fixed_height_controller(actualState, desiredState, gainsPID, dt, motorPower);
 
     m1_motor.setVelocity(-motorPower.m1)
