@@ -19,24 +19,25 @@ Robot {
   translation 0 0 0.015
   children [
     RangeFinder {
-      translation 0.03 0 -0.01
-      fieldOfView 0.82
-      width 8
-      height 8
+      name "tof_matrix"
+      translation 0.015 0 -0.012    #to be measured exactly
+      fieldOfView 0.785398          #45degrees
+      width 8                       #8x8 mode
+      height 8                      #8x8 mode
       spherical FALSE
-      near 0.01
-      minRange 0.1
-      maxRange 4.0
-      motionBlur 0.0
-      noise 0.05
-      resolution 0.1
+      near 0.01                     #to be checked
+      minRange 0.02                 #2cm
+      maxRange 3.0                  #3m at 8x8
+      motionBlur 0.0                #do we need this
+      noise 0.01                    #tune empirically, maybe add more noise if further away
+      resolution 0.05               #5mm resolution
       lens NULL
     }
     Camera {
-      translation 0.03 0 0.01
-      fieldOfView 0.87
-      width 324
-      height 324
+      translation 0.027 0 0.012     #to be measured exactly
+      fieldOfView 1.51844           #87degrees
+      width 320                     #Effective 320, technical 324
+      height 320                    #Effective 320, technical 324
     }
     Solid {
       translation 0 0 -0.015
