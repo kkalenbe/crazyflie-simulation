@@ -21,7 +21,9 @@ from controller import GPS
 from controller import Gyro
 from controller import Keyboard
 from controller import Camera
-from controller import DistanceSensor
+from controller import RangeFinder
+
+from synthetic_data_processing import process_camera_image, process_tof_image
 
 import cv2
 import numpy as np
@@ -64,14 +66,6 @@ camera = robot.getDevice("camera")
 camera.enable(timestep)
 tof = robot.getDevice("tof_matrix")
 tof.enable(timestep)
-# range_front = robot.getDevice("range_front")
-# range_front.enable(timestep)
-# range_left = robot.getDevice("range_left")
-# range_left.enable(timestep)
-# range_back = robot.getDevice("range_back")
-# range_back.enable(timestep)
-# range_right = robot.getDevice("range_right")
-# range_right.enable(timestep)
     
 ## Initialize variables
 actualState = ActualState_t()
@@ -145,39 +139,38 @@ while robot.step(timestep) != -1:
     ## Get camera image
     w, h = camera.getWidth(), camera.getHeight()
     cameraData = camera.getImage()  # Note: uint8 string
-    image = np.frombuffer(cameraData, np.uint8).reshape(h, w, 4)
+    cameraImageRaw = np.copy(np.frombuffer(cameraData, np.uint8).reshape(h, w, 4))
 
-    # Show image
-    # cv2.imshow('Drone camera', image)
-    # cv2.waitKey(1)
+    ## Get tof image
+    w, h = tof.getWidth(), tof.getHeight()
+    tofData = tof.getRangeImage(data_type="buffer")
+    tofImageRaw = np.copy(np.frombuffer(tofData, np.float32).reshape(h, w, 1))
 
-    # ## Detect empty floor (green) in front of the drone
-    # image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    # xmin, xmax = int(0.20 * w), int(0.80 * w)
-    # ymin, ymax = int(0.80 * h), int(1.00 * h)
-    # max_pix = (xmax - xmin) * (ymax - ymin)
-    # hmin, hmax = 30, 46
-    # roi_hue = image[ymin:ymax, xmin:xmax, 0]
-    # roi_sat = image[ymin:ymax, xmin:xmax, 1]
-    # pix_count = np.count_nonzero((roi_hue >= hmin) & (roi_hue <= hmax) & (roi_sat > 64))
-    # green_pct = pix_count / max_pix
-    #
-    # ## Avoidance state machine
-    # if avoid_yawTime > 0:
-    #     # Turning
-    #     avoid_yawTime -= dt
-    #     yawDesired += avoid_yawDesired
-    # else:
-    #     # Not turning
-    #     if green_pct > 0.20:
-    #         # No obstacle: fly forwards
-    #         forwardDesired += forward_speed
-    #         turn_rate = 0
-    #     else:
-    #         # Obstacle in front: start turn
-    #         sign = 1 if random.random() > 0.5 else -1
-    #         avoid_yawDesired = sign * yaw_rate
-    #         avoid_yawTime = random.random() * 5.0
+    # Process tof and camera images to simulate real sensors
+    cameraImageProcessed = process_camera_image(cameraImageRaw)
+    tofImageProcessed = process_tof_image(tofImageRaw)
+
+    # Scale the tof images from 0.0-3.0 into 0-255
+    tofImageRaw = (tofImageRaw * 255 / 3).astype(np.uint8)
+    tofImageProcessed = (tofImageProcessed * 255 / 3).astype(np.uint8)
+
+    # For visibility of output only
+    scale = 50
+    tofImageRaw = cv2.resize(tofImageRaw, dsize=None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST);
+    tofImageProcessed = cv2.resize(tofImageProcessed, dsize=None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST);
+
+    # Show raw images
+    cv2.imshow('Drone camera raw', cameraImageRaw)
+    cv2.waitKey(1)
+    cv2.imshow('Drone tof raw', tofImageRaw)
+    cv2.waitKey(1)
+
+    # Show processed images
+    cv2.imshow('Drone camera processed', cameraImageProcessed)
+    cv2.waitKey(1)
+    cv2.imshow('Drone tof processed', tofImageProcessed)
+    cv2.waitKey(1)
+
 
     # Manual override
     key = Keyboard().getKey()
