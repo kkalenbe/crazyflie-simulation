@@ -1,12 +1,20 @@
 """synthetic_data_processing script."""
 
 import numpy as np
+import cv2
 import random
 random.seed()
 
 def process_camera_image(camera_image_raw):
-
     camera_image_processed = np.copy(camera_image_raw)
+
+    # Convert to grayscale
+    camera_image_processed = cv2.cvtColor(camera_image_processed, cv2.COLOR_RGB2GRAY)
+
+    # Possibly crop to reduced size
+
+    # Add overexposure artifacts
+
     return camera_image_processed
 
 def process_tof_image(tof_image_raw):
