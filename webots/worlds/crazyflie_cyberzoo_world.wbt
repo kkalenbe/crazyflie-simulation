@@ -36,8 +36,11 @@ Robot {
     Camera {
       translation 0.027 0 0.012     #to be measured exactly
       fieldOfView 1.51844           #87degrees
-      width 320                     #Effective 320, technical 324
-      height 320                    #Effective 320, technical 324
+      width 320                     #effective 320, technical 324
+      height 320                    #effective 320, technical 324
+      exposure 1.5                  #tune manually to simulate CF camera
+      bloomThreshold 0.01           #tune manually to simulate CF camera
+      motionBlur 1.0                #tune manually to simulate CF camera
     }
     Solid {
       translation 0 0 -0.015
